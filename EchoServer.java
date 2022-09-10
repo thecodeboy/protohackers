@@ -15,22 +15,38 @@ public class EchoServer {
 
         int portNumber = Integer.parseInt(args[0]);
 
-        try (
-                ServerSocket serverSocket =
-                        new ServerSocket(Integer.parseInt(args[0]));
+        try (ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[0]))) {
+            while (true) {
                 Socket clientSocket = serverSocket.accept();
-                PrintWriter out =
-                        new PrintWriter(clientSocket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(clientSocket.getInputStream()))
-        ) {
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                out.println(inputLine);
+                new Thread(new EchoHandler(clientSocket)).start();
             }
         } catch (IOException e) {
             System.out.println("Exception caught when trying to listen on port "
                     + portNumber + " or listening for a connection");
+            System.out.println(e.getMessage());
+        }
+    }
+}
+
+class EchoHandler implements Runnable {
+    Socket clientSocket;
+    public EchoHandler(Socket clientSocket) {
+        this.clientSocket = clientSocket;
+    }
+
+    @Override
+    public void run() {
+        try(PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                System.out.println(inputLine);
+                out.println(inputLine);
+            }
+        }
+        catch (IOException e) {
+            System.out.println("Exception caught when trying to listen on port "
+                    + clientSocket.getPort() + " or listening for a connection");
             System.out.println(e.getMessage());
         }
     }
